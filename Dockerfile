@@ -1,9 +1,13 @@
-FROM node:20-alpine AS base
+FROM node:20-slim
+
 WORKDIR /app
 
-FROM base AS deps
-COPY package.json package-lock.json ./
-ENV HTTP_PROXY=http://172.23.0.4:2003
-ENV HTTPS_PROXY=http://172.23.0.4:2003
-ENV http_proxy=http://172.23.0.4:2003
-ENV https_p
+COPY package*.json ./
+RUN npm ci
+
+COPY . .
+RUN npm run build
+
+EXPOSE 3000
+
+CMD ["npm", "start"]
