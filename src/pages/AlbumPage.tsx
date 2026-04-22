@@ -20,16 +20,15 @@ function AlbumCard({ album, index, isVerified, onDelete, onEdit }: {
     <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-50px" }}
       transition={{ duration: 0.5, delay: (index % 6) * 0.08 }} className="group relative">
       <div className="relative overflow-hidden rounded-2xl bg-white shadow-soft hover:shadow-soft-lg transition-all duration-500">
-        <div className="overflow-hidden aspect-[4/3] relative">
-          {!imgLoaded && !isVideoFile && <div className="w-full h-full bg-[#FDECE4]/50 animate-pulse" />}
+        <div className={`overflow-hidden relative ${isVideoFile ? '' : 'aspect-[4/3]'}`}>
+          {!imgLoaded && !isVideoFile && <div className="w-full aspect-[4/3] bg-[#FDECE4]/50 animate-pulse" />}
           {isVideoFile ? (
             <video
               src={album.imageUrl}
-              className="w-full h-full object-cover"
+              className="w-full h-auto max-h-64 md:max-h-80 object-contain bg-black"
               controls
               playsInline
               preload="metadata"
-              muted
             />
           ) : (
             <img src={album.imageUrl} alt={album.title} onLoad={() => setImgLoaded(true)}
@@ -77,11 +76,11 @@ function Lightbox({ album, onClose }: { album: { id: number; title: string; desc
           className="absolute top-4 right-4 z-10 w-10 h-10 rounded-full bg-white/90 flex items-center justify-center text-[#8C7B72] hover:bg-white shadow-soft">
           <X className="w-5 h-5" />
         </button>
-        <div className="aspect-[16/10] overflow-hidden bg-black">
+        <div className="overflow-hidden bg-black">
           {isVideoFile ? (
-            <video src={album.imageUrl} className="w-full h-full" controls playsInline autoPlay muted />
+            <video src={album.imageUrl} className="w-full h-auto max-h-[60vh]" controls playsInline autoPlay />
           ) : (
-            <img src={album.imageUrl} alt={album.title} className="w-full h-full object-cover" />
+            <img src={album.imageUrl} alt={album.title} className="w-full aspect-[16/10] object-cover" />
           )}
         </div>
         <div className="p-8">
