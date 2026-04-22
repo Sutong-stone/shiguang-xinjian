@@ -85,6 +85,17 @@ if (env.isProduction) {
     console.log(`Server running on http://localhost:${port}/`);
   });
 
+  // Auto-push database schema and seed data on first startup
+  try {
+    const { execSync } = await import("child_process");
+    console.log("Pushing database schema...");
+    execSync("npx drizzle-kit push", { stdio: "inherit", timeout: 60000 });
+    console.log("Schema pushed successfully!");
+  } catch (e) {
+    console.error("Schema push failed (tables may already exist):", e);
+  }
+
+  // Seed data if empty
   try {
     const db = getDb();
     const existingAlbums = await db.select().from(albums).limit(1);
@@ -114,6 +125,8 @@ if (env.isProduction) {
         subtitle: "记录成长的每一刻",
       });
       console.log("Auto-seed complete!");
+    } else {
+      console.log("Database already has data, skipping seed.");
     }
   } catch (e) {
     console.error("Auto-seed failed:", e);
