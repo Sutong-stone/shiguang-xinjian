@@ -125,7 +125,14 @@ export default function FileUpload({ onUploadSuccess, acceptVideo = true }: File
               <p className="text-xs text-[#8C7B72]/50 mt-1">
                 图片最大 5MB，视频最大 10MB
               </p>
-              <p className="text-xs text-[#D4A78C]/70 mt-1">手机上可直接拍照或从相册选择</p>
+              <p className="text-xs text-[#D4A78C]/70 mt-1">
+                手机可直接拍照或从相册选择
+              </p>
+              {acceptVideo && (
+                <p className="text-xs text-amber-500/80 mt-1">
+                  提示：部分视频格式可能无法播放，建议上传 MP4(H.264) 格式
+                </p>
+              )}
             </div>
           </div>
         </div>

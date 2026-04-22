@@ -23,7 +23,14 @@ function AlbumCard({ album, index, isVerified, onDelete, onEdit }: {
         <div className="overflow-hidden aspect-[4/3] relative">
           {!imgLoaded && !isVideoFile && <div className="w-full h-full bg-[#FDECE4]/50 animate-pulse" />}
           {isVideoFile ? (
-            <video src={album.imageUrl} className="w-full h-full object-cover" preload="metadata" />
+            <video
+              src={album.imageUrl}
+              className="w-full h-full object-cover"
+              controls
+              playsInline
+              preload="metadata"
+              muted
+            />
           ) : (
             <img src={album.imageUrl} alt={album.title} onLoad={() => setImgLoaded(true)}
               className={`w-full h-full object-cover transition-all duration-700 group-hover:scale-110 ${imgLoaded ? 'opacity-100' : 'opacity-0'}`} loading="lazy" />
@@ -59,7 +66,8 @@ function AlbumCard({ album, index, isVerified, onDelete, onEdit }: {
   );
 }
 
-function Lightbox({ album, onClose }: { album: { id: number; title: string; description: string | null; imageUrl: string; date: string | null; category: string | null }; onClose: () => void }) {
+function Lightbox({ album, onClose }: { album: { id: number; title: string; description: string | null; imageUrl: string; isVideo: number | null; date: string | null; category: string | null }; onClose: () => void }) {
+  const isVideoFile = album.isVideo === 1 || album.imageUrl.startsWith("data:video");
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
       onClick={onClose} className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-6">
@@ -69,8 +77,12 @@ function Lightbox({ album, onClose }: { album: { id: number; title: string; desc
           className="absolute top-4 right-4 z-10 w-10 h-10 rounded-full bg-white/90 flex items-center justify-center text-[#8C7B72] hover:bg-white shadow-soft">
           <X className="w-5 h-5" />
         </button>
-        <div className="aspect-[16/10] overflow-hidden">
-          <img src={album.imageUrl} alt={album.title} className="w-full h-full object-cover" />
+        <div className="aspect-[16/10] overflow-hidden bg-black">
+          {isVideoFile ? (
+            <video src={album.imageUrl} className="w-full h-full" controls playsInline autoPlay muted />
+          ) : (
+            <img src={album.imageUrl} alt={album.title} className="w-full h-full object-cover" />
+          )}
         </div>
         <div className="p-8">
           <div className="flex items-center gap-3 mb-3">
