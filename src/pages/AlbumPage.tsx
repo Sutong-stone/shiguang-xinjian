@@ -41,13 +41,15 @@ function AlbumCard({ album, index, isVerified, onDelete, onEdit }: {
           {album.description && <p className="text-sm text-white/80 mt-1 line-clamp-2">{album.description}</p>}
         </div>
         {isVerified && (
-          <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10">
+          <div className="absolute top-3 right-3 flex gap-2 z-10">
             <button onClick={(e) => { e.stopPropagation(); onEdit(); }}
-              className="w-8 h-8 rounded-full bg-white/90 flex items-center justify-center text-[#8C7B72] hover:text-[#D4A78C] shadow-soft transition-colors">
+              className="w-8 h-8 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center text-[#8C7B72] hover:text-[#D4A78C] hover:bg-white shadow-soft transition-all"
+              title="编辑">
               <Pencil className="w-3.5 h-3.5" />
             </button>
             <button onClick={(e) => { e.stopPropagation(); onDelete(); }}
-              className="w-8 h-8 rounded-full bg-white/90 flex items-center justify-center text-[#8C7B72] hover:text-red-500 shadow-soft transition-colors">
+              className="w-8 h-8 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center text-[#8C7B72] hover:text-red-500 hover:bg-white shadow-soft transition-all"
+              title="删除">
               <Trash2 className="w-3.5 h-3.5" />
             </button>
           </div>
@@ -127,12 +129,14 @@ function UploadPanel({ onSuccess }: { onSuccess: () => void }) {
   const [imageUrl, setImageUrl] = useState("");
   const [isVideo, setIsVideo] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [uploadError, setUploadError] = useState("");
   const createAlbum = trpc.album.create.useMutation();
   const utils = trpc.useUtils();
 
   const handleSubmit = () => {
     if (!title.trim() || !imageUrl || isSubmitting) return;
     setIsSubmitting(true);
+    setUploadError("");
     createAlbum.mutate(
       { title: title.trim(), description: description.trim() || undefined, imageUrl, isVideo, date: date || undefined, category: category || undefined },
       {
@@ -141,7 +145,10 @@ function UploadPanel({ onSuccess }: { onSuccess: () => void }) {
           setTitle(""); setDescription(""); setDate(""); setCategory(""); setImageUrl(""); setIsVideo(0); setIsSubmitting(false);
           onSuccess();
         },
-        onError: () => setIsSubmitting(false),
+        onError: (err) => {
+          setIsSubmitting(false);
+          setUploadError(err.message || "上传失败，请检查图片大小（不超过5MB）或刷新页面重试");
+        },
       }
     );
   };
@@ -172,6 +179,11 @@ function UploadPanel({ onSuccess }: { onSuccess: () => void }) {
           <div><label className="text-xs text-[#8C7B72]/60 mb-1.5 block">描述</label>
             <textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="写下这张照片背后的故事..." rows={3}
               className="w-full px-3 py-2 rounded-xl border border-[#FDECE4] focus:border-[#D4A78C] focus:outline-none text-sm text-[#8C7B72] resize-none bg-transparent" /></div>
+          {uploadError && (
+            <div className="text-xs text-red-500 bg-red-50 rounded-lg px-3 py-2">
+              {uploadError}
+            </div>
+          )}
           <Button onClick={handleSubmit} disabled={!title.trim() || !imageUrl || isSubmitting}
             className="w-full bg-[#D4A78C] hover:bg-[#C49A7D] text-white rounded-full shadow-soft transition-all duration-300">
             {isSubmitting ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />保存中...</> : <><Plus className="w-4 h-4 mr-2" />添加到相册</>}

@@ -90,7 +90,7 @@ async function initDatabase() {
         id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
         title VARCHAR(255) NOT NULL,
         description TEXT,
-        imageUrl TEXT NOT NULL,
+        imageUrl MEDIUMTEXT NOT NULL,
         isVideo BIGINT UNSIGNED DEFAULT 0,
         date VARCHAR(50),
         category VARCHAR(50),
@@ -98,7 +98,7 @@ async function initDatabase() {
       )`,
       `CREATE TABLE IF NOT EXISTS messages (
         id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-        content TEXT NOT NULL,
+        content MEDIUMTEXT NOT NULL,
         authorName VARCHAR(255) NOT NULL,
         authorId BIGINT UNSIGNED DEFAULT 0 NOT NULL,
         createdAt TIMESTAMP DEFAULT NOW() NOT NULL
@@ -113,7 +113,7 @@ async function initDatabase() {
       )`,
       `CREATE TABLE IF NOT EXISTS cover_settings (
         id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-        imageUrl TEXT NOT NULL,
+        imageUrl MEDIUMTEXT NOT NULL,
         title VARCHAR(255) DEFAULT '拾光信笺' NOT NULL,
         subtitle VARCHAR(255) DEFAULT '记录成长的每一刻' NOT NULL,
         updatedAt TIMESTAMP DEFAULT NOW() NOT NULL
