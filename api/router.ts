@@ -3,6 +3,7 @@ import { passwordRouter } from "./password-router";
 import { messageRouter } from "./message-router";
 import { albumRouter } from "./album-router";
 import { milestoneRouter } from "./milestone-router";
+import { coverRouter } from "./cover-router";
 import { createRouter, publicQuery } from "./middleware";
 
 export const appRouter = createRouter({
@@ -12,6 +13,7 @@ export const appRouter = createRouter({
   message: messageRouter,
   album: albumRouter,
   milestone: milestoneRouter,
+  cover: coverRouter,
 });
 
 export type AppRouter = typeof appRouter;

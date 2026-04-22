@@ -11,12 +11,10 @@ export const messageRouter = createRouter({
   }),
 
   create: passwordQuery
-    .input(
-      z.object({
-        content: z.string().min(1).max(2000),
-        authorName: z.string().min(1).max(255),
-      })
-    )
+    .input(z.object({
+      content: z.string().min(1).max(2000),
+      authorName: z.string().min(1).max(255),
+    }))
     .mutation(async ({ input }) => {
       const db = getDb();
       const result = await db.insert(messages).values({
@@ -25,6 +23,21 @@ export const messageRouter = createRouter({
         authorId: 0,
       });
       return { id: Number(result[0].insertId) };
+    }),
+
+  update: passwordQuery
+    .input(z.object({
+      id: z.number(),
+      content: z.string().min(1).max(2000),
+      authorName: z.string().min(1).max(255),
+    }))
+    .mutation(async ({ input }) => {
+      const db = getDb();
+      await db.update(messages).set({
+        content: input.content,
+        authorName: input.authorName,
+      }).where(eq(messages.id, input.id));
+      return { success: true };
     }),
 
   delete: passwordQuery

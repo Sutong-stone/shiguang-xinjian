@@ -1,6 +1,5 @@
 import { Routes, Route } from 'react-router'
 import Home from './pages/Home'
-import Login from './pages/Login'
 import NotFound from './pages/NotFound'
 import AlbumPage from './pages/AlbumPage'
 import MessagesPage from './pages/MessagesPage'
@@ -13,7 +12,6 @@ export default function App() {
       <Route path="/album" element={<AlbumPage />} />
       <Route path="/messages" element={<MessagesPage />} />
       <Route path="/timeline" element={<TimelinePage />} />
-      <Route path="/login" element={<Login />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   )

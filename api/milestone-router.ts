@@ -1,8 +1,8 @@
 import { z } from "zod";
-import { createRouter, publicQuery } from "./middleware";
+import { createRouter, publicQuery, passwordQuery } from "./middleware";
 import { getDb } from "./queries/connection";
 import { milestones } from "@db/schema";
-import { desc } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 
 export const milestoneRouter = createRouter({
   list: publicQuery.query(async () => {
@@ -10,15 +10,13 @@ export const milestoneRouter = createRouter({
     return db.select().from(milestones).orderBy(desc(milestones.createdAt));
   }),
 
-  create: publicQuery
-    .input(
-      z.object({
-        title: z.string().min(1).max(255),
-        description: z.string().optional(),
-        date: z.string().min(1),
-        icon: z.string().optional(),
-      })
-    )
+  create: passwordQuery
+    .input(z.object({
+      title: z.string().min(1).max(255),
+      description: z.string().optional(),
+      date: z.string().min(1),
+      icon: z.string().optional(),
+    }))
     .mutation(async ({ input }) => {
       const db = getDb();
       const result = await db.insert(milestones).values({
@@ -28,5 +26,28 @@ export const milestoneRouter = createRouter({
         icon: input.icon || "star",
       });
       return { id: Number(result[0].insertId) };
+    }),
+
+  update: passwordQuery
+    .input(z.object({
+      id: z.number(),
+      title: z.string().min(1).max(255).optional(),
+      description: z.string().optional(),
+      date: z.string().optional(),
+      icon: z.string().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = getDb();
+      const { id, ...updates } = input;
+      await db.update(milestones).set(updates).where(eq(milestones.id, id));
+      return { success: true };
+    }),
+
+  delete: passwordQuery
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ input }) => {
+      const db = getDb();
+      await db.delete(milestones).where(eq(milestones.id, input.id));
+      return { success: true };
     }),
 });

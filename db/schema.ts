@@ -30,7 +30,7 @@ export const messages = mysqlTable("messages", {
   id: serial("id").primaryKey(),
   content: text("content").notNull(),
   authorName: varchar("authorName", { length: 255 }).notNull(),
-  authorId: bigint("authorId", { mode: "number", unsigned: true }).notNull(),
+  authorId: bigint("authorId", { mode: "number", unsigned: true }).default(0).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
@@ -42,6 +42,7 @@ export const albums = mysqlTable("albums", {
   title: varchar("title", { length: 255 }).notNull(),
   description: text("description"),
   imageUrl: text("imageUrl").notNull(),
+  isVideo: bigint("isVideo", { mode: "number", unsigned: true }).default(0),
   date: varchar("date", { length: 50 }),
   category: varchar("category", { length: 50 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
@@ -61,6 +62,17 @@ export const milestones = mysqlTable("milestones", {
 
 export type Milestone = typeof milestones.$inferSelect;
 export type InsertMilestone = typeof milestones.$inferInsert;
+
+export const coverSettings = mysqlTable("cover_settings", {
+  id: serial("id").primaryKey(),
+  imageUrl: text("imageUrl").notNull(),
+  title: varchar("title", { length: 255 }).default("拾光信笺").notNull(),
+  subtitle: varchar("subtitle", { length: 255 }).default("记录成长的每一刻").notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+});
+
+export type CoverSettings = typeof coverSettings.$inferSelect;
+export type InsertCoverSettings = typeof coverSettings.$inferInsert;
 //
 // Example:
 // export const posts = mysqlTable("posts", {
