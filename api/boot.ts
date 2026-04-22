@@ -9,6 +9,9 @@ import { createOAuthCallbackHandler } from "./kimi/auth";
 import { Paths } from "@contracts/constants";
 import { mkdir, writeFile } from "fs/promises";
 import { join } from "path";
+import { getDb } from "./queries/connection";
+import { albums, messages, milestones, coverSettings } from "@db/schema";
+import { createConnection } from "mysql2";
 
 const app = new Hono<{ Bindings: HttpBindings }>();
 
@@ -24,38 +27,23 @@ app.post("/api/upload", async (c) => {
     if (!password || password !== env.sitePassword) {
       return c.json({ error: "访问密码不正确" }, 401);
     }
-
     if (!file) {
       return c.json({ error: "没有上传文件" }, 400);
     }
-
-    // Validate file type
     if (!file.type.startsWith("image/")) {
       return c.json({ error: "只允许上传图片文件" }, 400);
     }
 
-    // Generate unique filename
     const timestamp = Date.now();
     const ext = file.name.split(".").pop() || "jpg";
     const filename = `upload_${timestamp}.${ext}`;
-
-    // Determine upload directory
-    const isDev = !env.isProduction;
-    const uploadDir = isDev
-      ? join(process.cwd(), "public", "images")
-      : join(process.cwd(), "dist", "public", "images");
-
+    const uploadDir = join(process.cwd(), "public", "images");
     await mkdir(uploadDir, { recursive: true });
-
     const filePath = join(uploadDir, filename);
     const arrayBuffer = await file.arrayBuffer();
     await writeFile(filePath, Buffer.from(arrayBuffer));
 
-    return c.json({
-      success: true,
-      url: `/images/${filename}`,
-      filename,
-    });
+    return c.json({ success: true, url: `/images/${filename}`, filename });
   } catch (error) {
     console.error("Upload error:", error);
     return c.json({ error: "上传失败" }, 500);
@@ -73,34 +61,80 @@ app.use("/api/trpc/*", async (c) => {
 });
 app.all("/api/*", (c) => c.json({ error: "Not Found" }, 404));
 
-export default app;
+// Serve static files and start server
+const { serve } = await import("@hono/node-server");
+const { serveStaticFiles } = await import("./lib/vite");
+serveStaticFiles(app);
 
-if (env.isProduction) {
-  const { serve } = await import("@hono/node-server");
-  const { serveStaticFiles } = await import("./lib/vite");
-  serveStaticFiles(app);
+const port = parseInt(process.env.PORT || "3000");
+serve({ fetch: app.fetch, port }, () => {
+  console.log(`Server running on http://localhost:${port}/`);
+  console.log(`NODE_ENV=${process.env.NODE_ENV}, isProduction=${env.isProduction}`);
+  // Initialize database after server starts
+  initDatabase();
+});
 
-  const port = parseInt(process.env.PORT || "3000");
-  serve({ fetch: app.fetch, port }, () => {
-    console.log(`Server running on http://localhost:${port}/`);
-  });
-
-  // Auto-push database schema and seed data on first startup
+// ============ Database Initialization ============
+async function initDatabase() {
   try {
-    const { execSync } = await import("child_process");
-    console.log("Pushing database schema...");
-    execSync("npx drizzle-kit push", { stdio: "inherit", timeout: 60000 });
-    console.log("Schema pushed successfully!");
-  } catch (e) {
-    console.error("Schema push failed (tables may already exist):", e);
-  }
+    const dbUrl = env.databaseUrl;
+    if (!dbUrl) {
+      console.error("DATABASE_URL not set, skipping DB init");
+      return;
+    }
 
-  // Seed data if empty
-  try {
+    // Create tables directly using raw SQL
+    const connection = createConnection(dbUrl);
+    const createTablesSQL = [
+      `CREATE TABLE IF NOT EXISTS albums (
+        id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        title VARCHAR(255) NOT NULL,
+        description TEXT,
+        imageUrl TEXT NOT NULL,
+        isVideo BIGINT UNSIGNED DEFAULT 0,
+        date VARCHAR(50),
+        category VARCHAR(50),
+        createdAt TIMESTAMP DEFAULT NOW() NOT NULL
+      )`,
+      `CREATE TABLE IF NOT EXISTS messages (
+        id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        content TEXT NOT NULL,
+        authorName VARCHAR(255) NOT NULL,
+        authorId BIGINT UNSIGNED DEFAULT 0 NOT NULL,
+        createdAt TIMESTAMP DEFAULT NOW() NOT NULL
+      )`,
+      `CREATE TABLE IF NOT EXISTS milestones (
+        id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        title VARCHAR(255) NOT NULL,
+        description TEXT,
+        date VARCHAR(50) NOT NULL,
+        icon VARCHAR(50) DEFAULT 'star' NOT NULL,
+        createdAt TIMESTAMP DEFAULT NOW() NOT NULL
+      )`,
+      `CREATE TABLE IF NOT EXISTS cover_settings (
+        id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        imageUrl TEXT NOT NULL,
+        title VARCHAR(255) DEFAULT '拾光信笺' NOT NULL,
+        subtitle VARCHAR(255) DEFAULT '记录成长的每一刻' NOT NULL,
+        updatedAt TIMESTAMP DEFAULT NOW() NOT NULL
+      )`,
+    ];
+
+    for (const sql of createTablesSQL) {
+      await new Promise<void>((resolve, reject) => {
+        connection.query(sql, (err) => {
+          if (err) reject(err);
+          else resolve();
+        });
+      });
+    }
+    console.log("All tables created/verified!");
+
+    // Check if we need to seed
     const db = getDb();
     const existingAlbums = await db.select().from(albums).limit(1);
     if (existingAlbums.length === 0) {
-      console.log("Database empty, auto-seeding...");
+      console.log("Database empty, seeding...");
       await db.insert(albums).values([
         { title: "初来乍到", description: "你来到这个世界的第一天，小小的你躺在妈妈怀里，那一刻仿佛时间都静止了。", imageUrl: "/images/baby-sleeping.jpg", isVideo: 0, date: "2024-01-15", category: "满月" },
         { title: "温柔守护", description: "妈妈握着你的小手，感受着你指尖的温度。这双手，将为你撑起一片天。", imageUrl: "/images/holding-hands.jpg", isVideo: 0, date: "2024-03-20", category: "百天" },
@@ -124,11 +158,12 @@ if (env.isProduction) {
         title: "拾光信笺",
         subtitle: "记录成长的每一刻",
       });
-      console.log("Auto-seed complete!");
+      console.log("Seed complete!");
     } else {
-      console.log("Database already has data, skipping seed.");
+      console.log("Database already has data.");
     }
+    connection.end();
   } catch (e) {
-    console.error("Auto-seed failed:", e);
+    console.error("Database init failed:", e);
   }
 }
