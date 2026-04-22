@@ -130,6 +130,26 @@ async function initDatabase() {
     }
     console.log("All tables created/verified!");
 
+    // Upgrade TEXT columns to MEDIUMTEXT if needed
+    const alterSQL = [
+      `ALTER TABLE albums MODIFY COLUMN imageUrl MEDIUMTEXT NOT NULL`,
+      `ALTER TABLE messages MODIFY COLUMN content MEDIUMTEXT NOT NULL`,
+      `ALTER TABLE cover_settings MODIFY COLUMN imageUrl MEDIUMTEXT NOT NULL`,
+    ];
+    for (const sql of alterSQL) {
+      try {
+        await new Promise<void>((resolve, reject) => {
+          connection.query(sql, (err) => {
+            if (err) reject(err);
+            else resolve();
+          });
+        });
+        console.log(`Column upgraded: ${sql.split(" ")[2]}`);
+      } catch {
+        // Column may already be MEDIUMTEXT, ignore error
+      }
+    }
+
     // Check if we need to seed
     const db = getDb();
     const existingAlbums = await db.select().from(albums).limit(1);
