@@ -15,7 +15,8 @@ export async function createContext(
   try {
     ctx.user = await authenticateRequest(opts.req.headers);
   } catch {
-    // Authentication is optional here
+    // OAuth auth is optional - most requests won't have a session cookie
+    // "No session cookie found" is expected for password-protected routes
   }
   return ctx;
 }
