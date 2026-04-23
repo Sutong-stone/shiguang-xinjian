@@ -99,7 +99,6 @@ export default function FileUpload({ onUploadSuccess, acceptVideo = true }: File
           }`}
         >
           <Input ref={fileInputRef} type="file" accept={acceptTypes}
-            {...(acceptVideo ? { capture: "environment" } : {})}
             onChange={handleFileSelect}
             className="hidden"
           />
