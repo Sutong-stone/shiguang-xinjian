@@ -104,8 +104,7 @@ export function createOAuthCallbackHandler() {
       await upsertUser({
         unionId: userId,
         name: userProfile.name,
-        avatar: userProfile.avatar_url,
-        lastSignInAt: new Date(),
+        avatarUrl: userProfile.avatar_url,
       });
 
       const token = await signSessionToken({

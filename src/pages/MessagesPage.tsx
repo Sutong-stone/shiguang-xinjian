@@ -89,17 +89,23 @@ export default function MessagesPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingMessage, setEditingMessage] = useState<NonNullable<typeof messages>[0] | null>(null);
 
-  const createMsg = trpc.message.create.useMutation({ onSuccess: () => { utils.message.list.invalidate(); } });
-  const updateMsg = trpc.message.update.useMutation({ onSuccess: () => { utils.message.list.invalidate(); setEditingMessage(null); } });
-  const deleteMsg = trpc.message.delete.useMutation({ onSuccess: () => { utils.message.list.invalidate(); } });
+  const createMsg = trpc.message.create.useMutation({
+    onSuccess: () => { utils.message.list.invalidate(); setNewMessage(""); setAuthorName(""); setIsSubmitting(false); },
+    onError: () => setIsSubmitting(false),
+  });
+  const updateMsg = trpc.message.update.useMutation({
+    onSuccess: () => { utils.message.list.invalidate(); setEditingMessage(null); },
+    onError: (err) => { alert(err.message || "更新失败"); },
+  });
+  const deleteMsg = trpc.message.delete.useMutation({
+    onSuccess: () => { utils.message.list.invalidate(); },
+    onError: (err) => { alert(err.message || "删除失败"); },
+  });
 
   const handleSubmit = () => {
     if (!newMessage.trim() || !authorName.trim() || isSubmitting) return;
     setIsSubmitting(true);
-    createMsg.mutate({ content: newMessage.trim(), authorName: authorName.trim() }, {
-      onSuccess: () => { setNewMessage(""); setAuthorName(""); setIsSubmitting(false); },
-      onError: () => setIsSubmitting(false),
-    });
+    createMsg.mutate({ content: newMessage.trim(), authorName: authorName.trim() });
   };
 
   const handleDelete = (id: number) => { if (window.confirm("确定要删除这条寄语吗？")) deleteMsg.mutate({ id }); };

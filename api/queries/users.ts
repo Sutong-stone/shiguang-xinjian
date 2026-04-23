@@ -16,7 +16,6 @@ export async function findUserByUnionId(unionId: string) {
 export async function upsertUser(data: InsertUser) {
   const values = { ...data };
   const updateSet: Partial<InsertUser> = {
-    lastSignInAt: new Date(),
     ...data,
   };
 

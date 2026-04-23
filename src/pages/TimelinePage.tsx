@@ -120,9 +120,18 @@ export default function TimelinePage() {
   const [showForm, setShowForm] = useState(false);
   const [editingMilestone, setEditingMilestone] = useState<NonNullable<typeof milestones>[0] | null>(null);
 
-  const createMs = trpc.milestone.create.useMutation({ onSuccess: () => { utils.milestone.list.invalidate(); } });
-  const updateMs = trpc.milestone.update.useMutation({ onSuccess: () => { utils.milestone.list.invalidate(); } });
-  const deleteMs = trpc.milestone.delete.useMutation({ onSuccess: () => { utils.milestone.list.invalidate(); } });
+  const createMs = trpc.milestone.create.useMutation({
+    onSuccess: () => { utils.milestone.list.invalidate(); setShowForm(false); },
+    onError: (err) => { alert(err.message || "添加失败"); },
+  });
+  const updateMs = trpc.milestone.update.useMutation({
+    onSuccess: () => { utils.milestone.list.invalidate(); setEditingMilestone(null); },
+    onError: (err) => { alert(err.message || "更新失败"); },
+  });
+  const deleteMs = trpc.milestone.delete.useMutation({
+    onSuccess: () => { utils.milestone.list.invalidate(); },
+    onError: (err) => { alert(err.message || "删除失败"); },
+  });
 
   const handleDelete = (id: number) => { if (window.confirm("确定要删除这条成长记录吗？")) deleteMs.mutate({ id }); };
 
@@ -134,10 +143,8 @@ export default function TimelinePage() {
       if (data.date) payload.date = data.date;
       if (data.icon) payload.icon = data.icon;
       updateMs.mutate(payload as { id: number; title?: string; description?: string; date?: string; icon?: string });
-      setEditingMilestone(null);
     } else {
       createMs.mutate({ title: data.title, description: data.description || undefined, date: data.date, icon: data.icon });
-      setShowForm(false);
     }
   };
 

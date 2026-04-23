@@ -24,7 +24,7 @@ export const albums = mysqlTable("albums", {
   id: serial("id").primaryKey(),
   title: varchar("title", { length: 255 }).notNull(),
   description: text("description"),
-  imageUrl: text("imageUrl", { length: 16777215 }).notNull(), // MEDIUMTEXT, 16MB
+  imageUrl: text("imageUrl").notNull(), // Base64 images stored as TEXT (upgraded to MEDIUMTEXT via raw SQL)
   isVideo: bigint("isVideo", { mode: "number", unsigned: true }).default(0),
   date: varchar("date", { length: 50 }),
   category: varchar("category", { length: 50 }),
@@ -36,7 +36,7 @@ export type InsertAlbum = typeof albums.$inferInsert;
 
 export const messages = mysqlTable("messages", {
   id: serial("id").primaryKey(),
-  content: text("content", { length: 16777215 }).notNull(), // MEDIUMTEXT
+  content: text("content").notNull(), // Base64/messages stored as TEXT (upgraded to MEDIUMTEXT via raw SQL)
   authorName: varchar("authorName", { length: 255 }).notNull(),
   authorId: bigint("authorId", { mode: "number", unsigned: true }).default(0).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
@@ -59,7 +59,7 @@ export type InsertMilestone = typeof milestones.$inferInsert;
 
 export const coverSettings = mysqlTable("cover_settings", {
   id: serial("id").primaryKey(),
-  imageUrl: text("imageUrl", { length: 16777215 }).notNull(), // MEDIUMTEXT
+  imageUrl: text("imageUrl").notNull(), // Base64 images stored as TEXT (upgraded to MEDIUMTEXT via raw SQL)
   title: varchar("title", { length: 255 }).default("拾光信笺").notNull(),
   subtitle: varchar("subtitle", { length: 255 }).default("记录成长的每一刻").notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),

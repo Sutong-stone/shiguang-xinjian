@@ -196,7 +196,10 @@ export default function HeroSection() {
   const lines = [["To", "my", "dearest"], ["Time", "is", "a", "gift"], ["You", "are", "our", "treasure"]];
   const { isVerified } = usePasswordAuth();
   const { data: coverData } = trpc.cover.get.useQuery();
-  const updateCoverMut = trpc.cover.update.useMutation();
+  const updateCoverMut = trpc.cover.update.useMutation({
+    onSuccess: () => { utils.cover.get.invalidate(); setShowEditor(false); },
+    onError: (err) => { alert(err.message || "更新封面失败"); },
+  });
   const utils = trpc.useUtils();
 
   const [showEditor, setShowEditor] = useState(false);
@@ -206,9 +209,7 @@ export default function HeroSection() {
   const isCustomCover = cover.imageUrl && cover.imageUrl !== "/images/hero-illustration.jpg";
 
   const handleSaveCover = (newCover: { imageUrl: string; title: string; subtitle: string }) => {
-    updateCoverMut.mutate(newCover, {
-      onSuccess: () => { utils.cover.get.invalidate(); setShowEditor(false); },
-    });
+    updateCoverMut.mutate(newCover);
   };
 
   return (

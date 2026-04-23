@@ -144,24 +144,27 @@ function UploadPanel({ onSuccess }: { onSuccess: () => void }) {
   const createAlbum = trpc.album.create.useMutation();
   const utils = trpc.useUtils();
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!title.trim() || !imageUrl || isSubmitting) return;
     setIsSubmitting(true);
     setUploadError("");
-    createAlbum.mutate(
-      { title: title.trim(), description: description.trim() || undefined, imageUrl, isVideo, date: date || undefined, category: category || undefined },
-      {
-        onSuccess: () => {
-          utils.album.list.invalidate();
-          setTitle(""); setDescription(""); setDate(""); setCategory(""); setImageUrl(""); setIsVideo(0); setIsSubmitting(false);
-          onSuccess();
-        },
-        onError: (err) => {
-          setIsSubmitting(false);
-          setUploadError(err.message || "上传失败，请检查图片大小（不超过5MB）或刷新页面重试");
-        },
-      }
-    );
+    try {
+      await createAlbum.mutateAsync({
+        title: title.trim(),
+        description: description.trim() || undefined,
+        imageUrl,
+        isVideo,
+        date: date || undefined,
+        category: category || undefined,
+      });
+      utils.album.list.invalidate();
+      setTitle(""); setDescription(""); setDate(""); setCategory(""); setImageUrl(""); setIsVideo(0);
+      setIsSubmitting(false);
+      onSuccess();
+    } catch (err: any) {
+      setIsSubmitting(false);
+      setUploadError(err?.message || "上传失败，请检查图片大小（不超过5MB）或刷新页面重试");
+    }
   };
 
   const handleUpload = (url: string) => {
@@ -217,9 +220,11 @@ export default function AlbumPage() {
 
   const deleteAlbumMut = trpc.album.delete.useMutation({
     onSuccess: () => { utils.album.list.invalidate(); setSelectedAlbum(null); },
+    onError: (err) => { alert(err.message || "删除失败，请检查网络或刷新后重试"); },
   });
   const updateAlbumMut = trpc.album.update.useMutation({
     onSuccess: () => { utils.album.list.invalidate(); setEditingAlbum(null); },
+    onError: (err) => { alert(err.message || "更新失败，请刷新后重试"); },
   });
 
   const handleDelete = (id: number) => {
