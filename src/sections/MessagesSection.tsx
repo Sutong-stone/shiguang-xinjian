@@ -38,7 +38,7 @@ export default function MessagesSection() {
   const sectionRef = useRef<HTMLDivElement>(null);
   const isInView = useInView(sectionRef, { once: true, margin: "-100px" });
   const { isVerified, showDialog, setShowDialog, error, verify } = usePasswordAuth();
-  const { data: messages } = trpc.message.list.useQuery();
+  const { data: messages, isLoading } = trpc.message.list.useQuery();
   const utils = trpc.useUtils();
 
   const [newMessage, setNewMessage] = useState("");
@@ -46,19 +46,19 @@ export default function MessagesSection() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const createMsg = trpc.message.create.useMutation({
-    onSuccess: () => { utils.message.list.invalidate(); },
+    onSuccess: () => {
+      utils.message.list.invalidate();
+      setNewMessage("");
+      setAuthorName("");
+      setIsSubmitting(false);
+    },
+    onError: () => setIsSubmitting(false),
   });
 
   const handleSubmit = () => {
     if (!newMessage.trim() || !authorName.trim() || isSubmitting) return;
     setIsSubmitting(true);
-    createMsg.mutate(
-      { content: newMessage.trim(), authorName: authorName.trim() },
-      {
-        onSuccess: () => { setNewMessage(""); setAuthorName(""); setIsSubmitting(false); },
-        onError: () => setIsSubmitting(false),
-      }
-    );
+    createMsg.mutate({ content: newMessage.trim(), authorName: authorName.trim() });
   };
 
   const displayMessages = messages?.slice(0, 3) || [];
@@ -107,7 +107,19 @@ export default function MessagesSection() {
         )}
 
         <div className="max-w-3xl mx-auto space-y-6">
-          {displayMessages.map((msg, idx) => <MessageCard key={msg.id} message={msg} index={idx} />)}
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="w-8 h-8 border-2 border-[#D4A78C] border-t-transparent rounded-full animate-spin" />
+              <span className="ml-3 text-sm text-[#8C7B72]/60">加载中...</span>
+            </div>
+          ) : displayMessages.length > 0 ? (
+            displayMessages.map((msg, idx) => <MessageCard key={msg.id} message={msg} index={idx} />)
+          ) : (
+            <div className="text-center py-12">
+              <MessageCircle className="w-10 h-10 text-[#D4A78C]/30 mx-auto mb-3" />
+              <p className="text-sm text-[#8C7B72]/50">还没有寄语，来写下第一封信吧</p>
+            </div>
+          )}
         </div>
 
         {messages && messages.length > 3 && (

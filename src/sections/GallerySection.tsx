@@ -2,7 +2,7 @@ import { useRef, useEffect, useState } from "react";
 import { motion, useInView, useScroll, useTransform } from "framer-motion";
 import { trpc } from "@/providers/trpc";
 import { Link } from "react-router";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, ImagePlus } from "lucide-react";
 
 function GalleryCard({ album, index }: { album: { id: number; title: string; description: string | null; imageUrl: string; date: string | null }; index: number }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -32,7 +32,7 @@ function GalleryCard({ album, index }: { album: { id: number; title: string; des
 export default function GallerySection() {
   const sectionRef = useRef<HTMLDivElement>(null);
   const isInView = useInView(sectionRef, { once: true, margin: "-100px" });
-  const { data: albums } = trpc.album.list.useQuery();
+  const { data: albums, isLoading } = trpc.album.list.useQuery();
   const [dialogText, setDialogText] = useState("");
   const fullText = "今天是你满月的日子，看着你熟睡的小脸，觉得整个世界都安静了下来...";
 
@@ -46,7 +46,8 @@ export default function GallerySection() {
     return () => clearInterval(timer);
   }, [isInView]);
 
-  const items = albums || [];
+  // Only show latest 6 albums on homepage to reduce data transfer
+  const items = (albums || []).slice(0, 6);
   const column1 = items.filter((_, i) => i % 3 === 0);
   const column2 = items.filter((_, i) => i % 3 === 1);
   const column3 = items.filter((_, i) => i % 3 === 2);
@@ -68,13 +69,25 @@ export default function GallerySection() {
           <p className="text-sm text-[#D4A78C]">每一张照片，都是时光的标本</p>
         </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6" style={{ perspective: "1200px" }}>
-          {columns.map((col, colIdx) => (
-            <div key={colIdx} className="space-y-6" style={{ transform: `translateY(${colIdx * 40}px)` }}>
-              {col.map((album, idx) => <GalleryCard key={album.id} album={album} index={colIdx * col.length + idx} />)}
-            </div>
-          ))}
-        </div>
+        {isLoading ? (
+          <div className="flex items-center justify-center py-20">
+            <div className="w-8 h-8 border-2 border-[#D4A78C] border-t-transparent rounded-full animate-spin" />
+            <span className="ml-3 text-sm text-[#8C7B72]/60">照片加载中...</span>
+          </div>
+        ) : items.length === 0 ? (
+          <div className="text-center py-20">
+            <ImagePlus className="w-10 h-10 text-[#D4A78C]/30 mx-auto mb-3" />
+            <p className="text-sm text-[#8C7B72]/50">相册还是空的，去上传第一张照片吧</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6" style={{ perspective: "1200px" }}>
+            {columns.map((col, colIdx) => (
+              <div key={colIdx} className="space-y-6" style={{ transform: `translateY(${colIdx * 40}px)` }}>
+                {col.map((album, idx) => <GalleryCard key={album.id} album={album} index={colIdx * col.length + idx} />)}
+              </div>
+            ))}
+          </div>
+        )}
 
         <motion.div initial={{ opacity: 0 }} animate={isInView ? { opacity: 1 } : {}} transition={{ delay: 0.8 }} className="text-center mt-16">
           <Link to="/album" className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-white text-[#8C7B72] text-sm shadow-soft hover:shadow-soft-lg transition-all duration-300 hover:text-[#D4A78C] group">

@@ -38,7 +38,7 @@ function TimelineCard({ ms, index }: { ms: { id: number; title: string; descript
 export default function TimelineSection() {
   const sectionRef = useRef<HTMLDivElement>(null);
   const isInView = useInView(sectionRef, { once: true, margin: "-100px" });
-  const { data: milestones } = trpc.milestone.list.useQuery();
+  const { data: milestones, isLoading } = trpc.milestone.list.useQuery();
 
   const displayMilestones = milestones?.slice(0, 5) || [];
 
@@ -55,7 +55,19 @@ export default function TimelineSection() {
         </motion.div>
 
         <div className="max-w-2xl mx-auto space-y-8">
-          {displayMilestones.map((ms, idx) => <TimelineCard key={ms.id} ms={ms} index={idx} />)}
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="w-8 h-8 border-2 border-[#D4A78C] border-t-transparent rounded-full animate-spin" />
+              <span className="ml-3 text-sm text-[#8C7B72]/60">加载中...</span>
+            </div>
+          ) : displayMilestones.length > 0 ? (
+            displayMilestones.map((ms, idx) => <TimelineCard key={ms.id} ms={ms} index={idx} />)
+          ) : (
+            <div className="text-center py-12">
+              <Baby className="w-10 h-10 text-[#D4A78C]/30 mx-auto mb-3" />
+              <p className="text-sm text-[#8C7B72]/50">还没有成长记录，去添加第一个里程碑吧</p>
+            </div>
+          )}
         </div>
 
         {milestones && milestones.length > 5 && (
